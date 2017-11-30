@@ -102,17 +102,26 @@ class H2OContext(object):
 
         self.is_initialized = False
 
+    @staticmethod
+    def __default_h2o_connect(h2o_context, **kwargs):
+        return h2o.connect(ip=h2o_context._client_ip, port=h2o_context._client_port, **kwargs)
+
 
     @staticmethod
-    def getOrCreate(spark, conf=None, verbose=True, external_cluster_handle=None, **kwargs):
+    def getOrCreate(spark, conf=None, verbose=True, pre_create_hook=None, h2o_connect_hook=__default_h2o_connect, **kwargs):
         """
-         Get existing or create new H2OContext based on provided H2O configuration. If the conf parameter is set then
-         configuration from it is used. Otherwise the configuration properties passed to Sparkling Water are used.
-         If the values are not found the default values are used in most of the cases. The default cluster mode
-         is internal, ie. spark.ext.h2o.external.cluster.mode=false
+        Get existing or create new H2OContext based on provided H2O configuration. If the conf parameter is set then
+        configuration from it is used. Otherwise the configuration properties passed to Sparkling Water are used.
+        If the values are not found the default values are used in most of the cases. The default cluster mode
+        is internal, ie. spark.ext.h2o.external.cluster.mode=false
 
-         param - Spark Context or Spark Session
-         returns H2O Context
+        :param spark: Spark Context or Spark Session
+        :param conf: H2O configuration as instance of H2OConf
+        :param verbose; True if verbose H2O output
+        :param pre_create_hook:  hook to reconfigure conf on given spark context
+        :param h2o_connect_hook:  hook which realize connection of h2o client
+        :param kwargs:  additional parameters which are passed to h2o_connect_hook
+        :return:  instance of H2OContext
         """
 
         # When external cluster handle is specified then we need to make sure the configuration
@@ -139,6 +148,9 @@ class H2OContext(object):
             conf.set_h2o_cluster(external_cluster_handle['node_ip'], int(external_cluster_handle['node_port']))
             conf.use_manual_cluster_start()
 
+        # Call pre_create hook
+        if pre_create_hook:
+            conf = pre_create_hook(spark, conf)
 
         spark_session = spark
         if isinstance(spark, SparkContext):
@@ -164,10 +176,9 @@ class H2OContext(object):
         h2o_context._client_port = jhc.h2oLocalClientPort()
 
         # Create H2O REST API client
-        if external_cluster_handle is not None:
-            h2o.connect(ip=h2o_context._client_ip, port=h2o_context._client_port, config=external_cluster_handle['connect_params'], verbose=verbose, **kwargs)
-        else:
-            h2o.connect(ip=h2o_context._client_ip, port=h2o_context._client_port, verbose=verbose, **kwargs)
+        #    h2o.connect(ip=h2o_context._client_ip, port=h2o_context._client_port, config=external_cluster_handle['connect_params'], **kwargs)
+        if h2o_connect_hook:
+            h2o_connect_hook(h2o_context, verbose=verbose, **kwargs)
 
         h2o_context.is_initialized = True
 
