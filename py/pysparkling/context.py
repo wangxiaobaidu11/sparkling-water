@@ -102,7 +102,6 @@ class H2OContext(object):
 
         self.is_initialized = False
 
-    @staticmethod
     def __default_h2o_connect(h2o_context, **kwargs):
         return h2o.connect(ip=h2o_context._client_ip, port=h2o_context._client_port, **kwargs)
 
