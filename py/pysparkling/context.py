@@ -124,50 +124,27 @@ class H2OContext(object):
         :return:  instance of H2OContext
         """
 
-        # When external cluster handle is specified then we need to make sure the configuration
-        # is corresponding to this situation -> We already have H2O cluster running and need to connect to it.
-        # For this we need to use manual cluster start mode, need to know the cloud name and ip address and port of a
-        # single node in this cluster
-        if external_cluster_handle is not None:
-            params = external_cluster_handle['connect_params']
-            # if the configuration is empty, infer the data from the handle
-            if conf is None:
-                conf = H2OConf(spark)
-            else:
-                if conf.cloud_name() is not None:
-                    warnings.warn("Cloud name value is automatically inferred from the external_cluster_handle and "
-                                  "specified value is ignored.")
-                if conf.h2o_cluster_host() is not None or conf.h2o_cluster_port() is not None:
-                    warnings.warn("Ip and port of external cluster is automatically inferred from the "
-                                  "external_cluster_handle and specified value is ignored.")
-
-            conf.use_manual_cluster_start()
-            # we can infer cloud name from the handle, it is stored in cookie as the name of the argument
-            conf.set_cloud_name(params['cookies'][0].split("=")[0])
-            # don't use params['ip'] and params['port'] as these are the port and ip of the proxy
-            conf.set_h2o_cluster(external_cluster_handle['node_ip'], int(external_cluster_handle['node_port']))
-            conf.use_manual_cluster_start()
-
-        # Call pre_create hook
-        if pre_create_hook:
-            conf = pre_create_hook(spark, conf)
-
+        # Get spark session
         spark_session = spark
         if isinstance(spark, SparkContext):
             warnings.warn("Method H2OContext.getOrCreate with argument of type SparkContext is deprecated and " +
                           "parameter of type SparkSession is preferred.")
             spark_session = SparkSession.builder.getOrCreate()
+        # Get H2OConf
+        if conf is not None:
+            selected_conf = conf
+        else:
+            selected_conf = H2OConf(spark_session)
+
+        # Call pre_create hook
+        if pre_create_hook:
+            pre_create_hook(spark_session, selected_conf)
 
         h2o_context = H2OContext(spark_session)
 
         jvm = h2o_context._jvm  # JVM
         jspark_session = h2o_context._jspark_session  # Java Spark Session
 
-
-        if conf is not None:
-            selected_conf = conf
-        else:
-            selected_conf = H2OConf(spark_session)
         # Create backing Java H2OContext
         jhc = jvm.org.apache.spark.h2o.JavaH2OContext.getOrCreate(jspark_session, selected_conf._jconf)
         h2o_context._jhc = jhc
@@ -176,7 +153,6 @@ class H2OContext(object):
         h2o_context._client_port = jhc.h2oLocalClientPort()
 
         # Create H2O REST API client
-        #    h2o.connect(ip=h2o_context._client_ip, port=h2o_context._client_port, config=external_cluster_handle['connect_params'], **kwargs)
         if h2o_connect_hook:
             h2o_connect_hook(h2o_context, verbose=verbose, **kwargs)
 
