@@ -52,7 +52,7 @@ trait SharedBackendConf {
   def uiUpdateInterval = sparkConf.getInt(PROP_UI_UPDATE_INTERVAL._1, PROP_UI_UPDATE_INTERVAL._2)
   def cloudTimeout = sparkConf.getInt(PROP_CLOUD_TIMEOUT._1, PROP_CLOUD_TIMEOUT._2)
   def h2oNodeWebEnabled = sparkConf.getBoolean(PROP_NODE_ENABLE_WEB._1, PROP_NODE_ENABLE_WEB._2)
-
+  def contextPath = sparkConf.getOption(PROP_CONTEXT_PATH._1)
 
   /** H2O Client parameters */
   def flowDir = sparkConf.getOption(PROP_FLOW_DIR._1)
@@ -128,7 +128,8 @@ trait SharedBackendConf {
   def setH2ONodeWebEnabled() = set(PROP_NODE_ENABLE_WEB._1, true)
   def setH2ONodeWebDisabled() = set(PROP_NODE_ENABLE_WEB._1, false)
 
-
+  def setContextPath(path: String) = set(PROP_CONTEXT_PATH._1, path)
+  
 
   /** H2O Client parameters */
   def setFlowDir(dir: String) = set(PROP_FLOW_DIR._1, dir)
@@ -223,6 +224,9 @@ object SharedBackendConf {
 
   /** Path to flow dir. */
   val PROP_FLOW_DIR = ("spark.ext.h2o.client.flow.dir", None)
+
+  /** Context path for H2O client */
+  val PROP_CONTEXT_PATH = ("spark.ext.h2o.context.path", None)
 
   /** IP of H2O client node */
   val PROP_CLIENT_IP = ("spark.ext.h2o.client.ip", None)

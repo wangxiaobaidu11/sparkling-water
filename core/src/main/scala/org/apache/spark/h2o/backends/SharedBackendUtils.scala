@@ -129,6 +129,7 @@ private[backends] trait SharedBackendUtils extends Logging with Serializable {
       ++ addIfNotNull("-port", Some(conf.clientWebPort).filter(_ > 0).map(_.toString).orNull)
       ++ addIfNotNull("-jks", conf.jks.orNull)
       ++ addIfNotNull("-jks_pass", conf.jksPass.orNull)
+      ++ addIfNotNull("-context_path", conf.contextPath.orNull)
       ++ conf.clientNetworkMask.map(mask => Seq("-network", mask)).getOrElse(Seq("-ip", conf.clientIp.get))
     ).toArray
 

@@ -94,6 +94,8 @@ Configuration properties independent on selected backend
 |                                                    |                | nodes. It is disabled by default for   |
 |                                                    |                | security reasons.                      |
 +----------------------------------------------------+----------------+----------------------------------------+
+| ``spark.ext.h2o.context.path``                     | ``None``       | Context path to expose H2O web server. |
++----------------------------------------------------+----------------+----------------------------------------+
 | **H2O client parameters**                          |                |                                        |
 +----------------------------------------------------+----------------+----------------------------------------+
 | ``spark.ext.h2o.client.flow.dir``                  | ``None``       | Directory where flows from H2O Flow    |
